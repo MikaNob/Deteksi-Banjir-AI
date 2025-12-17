@@ -37,23 +37,23 @@ with st.sidebar:
             st.warning("⚠️ Masukkan API Key agar fitur AI aktif.")
 
 # ==========================================
-# 1. FUNGSI: LOAD MODEL XGBOOST
+# 1. FUNGSI: LOAD MODEL XGBOOST (DENGAN PERBAIKAN)
 # ==========================================
 @st.cache_resource
 def load_model():
     model = XGBClassifier()
     try:
-        # Coba load model
+        # Load model
         model.load_model("model_banjir_xgboost.json")
+        
+        # --- TAMBALAN PENTING ---
+        # Memaksa model mengenali dirinya sebagai Classifier
+        # Ini mengatasi error "_estimator_type undefined"
+        model._estimator_type = "classifier" 
+        
         return model
     except Exception as e:
-        # JIKA GAGAL, JANGAN DIAM SAJA. TAMPILKAN PENYEBABNYA!
-        st.error(f"Terjadi Error Saat Memuat Model: {e}")
-        
-        # Cek apakah file benar-benar ada di folder server?
-        import os
-        files = os.listdir('.')
-        st.warning(f"Daftar file yang ditemukan di server: {files}")
+        st.error(f"Gagal memuat model. Error detail: {e}")
         return None
 
 # ==========================================
@@ -301,3 +301,4 @@ else:
                 for act in static_advice:
 
                     st.write(act)
+
