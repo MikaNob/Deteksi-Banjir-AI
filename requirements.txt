@@ -4,3 +4,4 @@ numpy
 pydeck
 xgboost
 google-generativeai
+scikit-learn
