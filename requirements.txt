@@ -1,7 +1,6 @@
-streamlit 
-pandas 
-numpy 
+streamlit
+pandas
+numpy
 pydeck
 xgboost
-google.generativeai
-os
+google-generativeai
