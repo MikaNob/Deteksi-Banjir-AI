@@ -37,23 +37,17 @@ with st.sidebar:
             st.warning("⚠️ Masukkan API Key agar fitur AI aktif.")
 
 # ==========================================
-# 1. FUNGSI: LOAD MODEL XGBOOST (DENGAN PERBAIKAN)
+# 1. FUNGSI: LOAD MODEL XGBOOST
 # ==========================================
 @st.cache_resource
 def load_model():
     model = XGBClassifier()
     try:
-        # Load model
+        # Load model JSON (Versi XGBoost harus sama dengan requirements.txt)
         model.load_model("model_banjir_xgboost.json")
-        
-        # --- TAMBALAN PENTING ---
-        # Memaksa model mengenali dirinya sebagai Classifier
-        # Ini mengatasi error "_estimator_type undefined"
-        model._estimator_type = "classifier" 
-        
         return model
     except Exception as e:
-        st.error(f"Gagal memuat model. Error detail: {e}")
+        st.error(f"Gagal memuat model. Pastikan versi XGBoost cocok. Error: {e}")
         return None
 
 # ==========================================
@@ -71,37 +65,24 @@ def get_gemini_advice(risk_percent, rr, wind, humidity, status_level):
     active_model = None
     
     try:
-        # 1. Cari model secara dinamis dari API
-        # Kita cari model yang support 'generateContent' dan namanya mengandung 'gemini'
+        # Cari model secara dinamis dari API
         available_models = list(genai.list_models())
         
-        # Prioritas 1: Cari yang ada kata 'flash' (biasanya paling cepat/gratis)
-        for m in available_models:
-            if 'generateContent' in m.supported_generation_methods and 'flash' in m.name:
-                active_model = m.name
-                break
-        
-        # Prioritas 2: Jika tidak ada flash, cari yang 'pro'
-        if not active_model:
+        # Prioritas pencarian model
+        for priority in ['flash', 'pro', 'gemini']:
             for m in available_models:
-                if 'generateContent' in m.supported_generation_methods and 'pro' in m.name:
+                if 'generateContent' in m.supported_generation_methods and priority in m.name:
                     active_model = m.name
                     break
-        
-        # Prioritas 3: Apapun yang ada kata 'gemini'
-        if not active_model:
-            for m in available_models:
-                if 'generateContent' in m.supported_generation_methods and 'gemini' in m.name:
-                    active_model = m.name
-                    break
+            if active_model: break
                     
         if not active_model:
-            return "⚠️ Akun API Key ini tidak memiliki akses ke model Gemini apapun. Cek billing/akses di Google AI Studio."
+            return "⚠️ Akun API Key ini tidak memiliki akses ke model Gemini apapun."
 
     except Exception as e:
         return f"⚠️ Gagal menghubungi Google AI: {str(e)}"
 
-    # 2. Kirim Prompt menggunakan model yang ditemukan
+    # Kirim Prompt
     try:
         model = genai.GenerativeModel(active_model)
         
@@ -237,7 +218,7 @@ else:
                                 with c2:
                                     st.write("🤖 **Analisis Asisten Cerdas:**")
                                     if GEMINI_API_KEY:
-                                        with st.spinner("Gemini sedang mencari model yang cocok di akun Anda..."):
+                                        with st.spinner("Gemini sedang menganalisis situasi..."):
                                             gemini_response = get_gemini_advice(
                                                 risk_val, 
                                                 last_row['RR_akumulasi_3hari'], 
@@ -299,6 +280,4 @@ else:
             else:
                 st.warning("⚠️ Masukkan API Key untuk saran cerdas.")
                 for act in static_advice:
-
                     st.write(act)
-
